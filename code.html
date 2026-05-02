@@ -1422,7 +1422,8 @@ function initScrollReveal(reducedMotion) {
       scrollTrigger: {
         trigger: section,
         start: 'top 80%',
-        once: true,
+        end: 'top 20%',
+        toggleActions: 'play reverse play reverse',
       },
     });
   });
@@ -1443,20 +1444,24 @@ function initScrollReveal(reducedMotion) {
     });
   }
 
-  // Experience items: alternate left/right entrance
+  // Experience items: alternate left/right entrance — replay on scroll up
   const expItems = document.querySelectorAll('#experience .reveal-item');
   expItems.forEach((item, i) => {
-    gsap.from(item, {
-      x: i % 2 === 0 ? -40 : 40,
-      opacity: 0,
-      duration: 0.7,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: item,
-        start: 'top 85%',
-        once: true,
-      },
-    });
+    gsap.fromTo(item,
+      { x: i % 2 === 0 ? -40 : 40, opacity: 0 },
+      {
+        x: 0,
+        opacity: 1,
+        duration: 0.7,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: item,
+          start: 'top 85%',
+          end: 'top 30%',
+          toggleActions: 'play reverse play reverse',
+        },
+      }
+    );
   });
 }
 </script>
