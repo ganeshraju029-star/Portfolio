@@ -5,7 +5,7 @@
 
 export const Config = {
   // Email Configuration
-  ADMIN_EMAIL: 'ganeshraju015@gmail.com',
+  ADMIN_EMAIL: 'ganeshraju029@gmail.com',
   RESEND_API_KEY: functions.config().resend?.api_key || process.env.RESEND_API_KEY,
   FROM_EMAIL: 'noreply@portfolio.ganeshraju.dev',
   

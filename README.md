@@ -142,7 +142,7 @@ Required environment variables:
 ```env
 RESEND_API_KEY=your_resend_api_key_here
 FIREBASE_PROJECT_ID=your_firebase_project_id_here
-ADMIN_EMAIL=ganeshraju015@gmail.com
+ADMIN_EMAIL=ganeshraju029@gmail.com
 NODE_ENV=production
 ```
 
@@ -482,7 +482,7 @@ This project is proprietary and confidential.
 **Ganesh Raju**
 - LinkedIn: [linkedin.com/in/ganesh-raju015](https://linkedin.com/in/ganesh-raju015)
 - GitHub: [github.com/ganeshraju029-star](https://github.com/ganeshraju029-star)
-- Email: ganeshraju015@gmail.com
+- Email: ganeshraju029@gmail.com
 
 ## 🙏 Acknowledgments
 
