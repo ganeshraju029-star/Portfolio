@@ -1,0 +1,205 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================================================
+    // CONNECTIONS COLLECTION
+    // ============================================================================
+    match /connections/{connectionId} {
+      // Allow anyone to create a connection (contact form submission)
+      allow create: if request.resource.data.name is string 
+                   && request.resource.data.name.size() >= 2
+                   && request.resource.data.email is string
+                   && request.resource.data.email.matches('^[^@]+@[^@]+\\.[^@]+$')
+                   && request.resource.data.message is string
+                   && request.resource.data.message.size() >= 10
+                   && request.resource.data.requestId is string
+                   && request.resource.data.status in ['new', 'read', 'replied', 'archived']
+                   && request.resource.data.priority in ['low', 'medium', 'high'];
+      
+      // Only authenticated admin users can read connections
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // Only authenticated admin users can update connections
+      allow update: if request.auth != null 
+                  && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                  && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+                  && request.resource.data.diff(resource.data).affectedKeys()
+                     .hasOnly(['status', 'priority', 'updatedAt']);
+      
+      // Only authenticated admin users can delete connections
+      allow delete: if request.auth != null 
+                  && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                  && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // List connections - admin only
+    match /connections {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // ANALYTICS COLLECTION
+    // ============================================================================
+    match /analytics/{sessionId} {
+      // Allow anyone to create analytics data (for tracking)
+      allow create: if request.resource.data.sessionId is string
+                   && request.resource.data.visitorId is string
+                   && request.resource.data.pageViews is list
+                   && request.resource.data.visitor is map
+                   && request.resource.data.sessionStart is timestamp;
+      
+      // Only authenticated admin users can read analytics
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // No updates or deletes allowed for analytics
+      allow update, delete: if false;
+    }
+    
+    match /analytics {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // DAILY ANALYTICS COLLECTION
+    // ============================================================================
+    match /dailyAnalytics/{date} {
+      // Only backend can create/update daily analytics
+      allow create, update: if false;
+      
+      // Only authenticated admin users can read
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      allow delete: if false;
+    }
+    
+    match /dailyAnalytics {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // RESUME DOWNLOADS COLLECTION
+    // ============================================================================
+    match /resumeDownloads/{downloadId} {
+      // Allow anyone to create resume download tracking
+      allow create: if request.resource.data.timestamp is timestamp
+                   && request.resource.data.country is string
+                   && request.resource.data.device is string
+                   && request.resource.data.browser is string;
+      
+      // Only authenticated admin users can read
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    match /resumeDownloads {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // PROJECT CLICKS COLLECTION
+    // ============================================================================
+    match /projectClicks/{clickId} {
+      // Allow anyone to create project click tracking
+      allow create: if request.resource.data.projectId is string
+                   && request.resource.data.projectName is string
+                   && request.resource.data.timestamp is timestamp;
+      
+      // Only authenticated admin users can read
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    match /projectClicks {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // ADMIN LOGS COLLECTION
+    // ============================================================================
+    match /adminLogs/{logId} {
+      // Only backend can create admin logs
+      allow create: if false;
+      
+      // Only authenticated admin users can read
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    match /adminLogs {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // SETTINGS COLLECTION
+    // ============================================================================
+    match /settings/{settingId} {
+      // Only authenticated admin users can read
+      allow read: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // Only authenticated admin users can write
+      allow write: if request.auth != null 
+                 && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                 && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    match /settings {
+      allow list: if request.auth != null 
+                && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // ============================================================================
+    // USERS COLLECTION (for admin authentication)
+    // ============================================================================
+    match /users/{userId} {
+      // Only authenticated users can read their own data
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Only the user can update their own data
+      allow update: if request.auth != null 
+                  && request.auth.uid == userId
+                  && request.resource.data.diff(resource.data).affectedKeys()
+                     .hasOnly(['displayName', 'photoURL', 'email']);
+      
+      // No creates or deletes
+      allow create, delete: if false;
+    }
+    
+    match /users {
+      allow list: if false;
+    }
+  }
+}

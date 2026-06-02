@@ -1637,6 +1637,13 @@ function initSkillBars(reducedMotion) {
 }
 </script>
 <script>
+// Generate session ID for analytics tracking
+function generateSessionId() {
+  const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  sessionStorage.setItem('sessionId', sessionId);
+  return sessionId;
+}
+
 function initContactForm() {
   const form = document.getElementById('contact-form');
   const successMsg = document.getElementById('success-message');
@@ -1699,30 +1706,98 @@ function initContactForm() {
     });
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Simulate successful submission (no real endpoint)
-    if (typeof gsap !== 'undefined') {
-      gsap.to(form, {
-        opacity: 0,
-        duration: 0.4,
-        onComplete: () => {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+
+    try {
+      // Get form data
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const message = document.getElementById('contact-message').value.trim();
+      
+      // Get visitor information
+      const userAgent = navigator.userAgent;
+      const device = /mobile|android|iphone|ipad|phone/i.test(userAgent) ? 'Mobile' : 
+                     /tablet|ipad/i.test(userAgent) ? 'Tablet' : 'Desktop';
+      const browser = userAgent.includes('Chrome') ? 'Chrome' : 
+                     userAgent.includes('Safari') ? 'Safari' : 
+                     userAgent.includes('Firefox') ? 'Firefox' : 
+                     userAgent.includes('Edge') ? 'Edge' : 'Unknown';
+      
+      // Prepare API request
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001/portfolio-backend-production/us-central1/api/api/contact'
+        : '/api/contact';
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          company: '',
+          subject: '',
+          linkedin: '',
+          phone: '',
+          sourcePage: window.location.pathname,
+          visitorData: {
+            sessionId: sessionStorage.getItem('sessionId') || generateSessionId(),
+            country: 'Unknown',
+            device,
+            browser,
+            os: navigator.platform,
+            language: navigator.language,
+            screenResolution: `${window.screen.width}x${window.screen.height}`
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Show success animation
+        if (typeof gsap !== 'undefined') {
+          gsap.to(form, {
+            opacity: 0,
+            duration: 0.4,
+            onComplete: () => {
+              form.style.display = 'none';
+              successMsg.classList.remove('hidden');
+              successMsg.classList.add('flex');
+              // Animate checkmark
+              const checkPath = document.getElementById('checkmark-path');
+              if (checkPath) {
+                gsap.to(checkPath, { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out', delay: 0.2 });
+              }
+            }
+          });
+        } else {
           form.style.display = 'none';
           successMsg.classList.remove('hidden');
           successMsg.classList.add('flex');
-          // Animate checkmark
-          const checkPath = document.getElementById('checkmark-path');
-          if (checkPath) {
-            gsap.to(checkPath, { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out', delay: 0.2 });
-          }
         }
-      });
-    } else {
-      form.style.display = 'none';
-      successMsg.classList.remove('hidden');
-      successMsg.classList.add('flex');
+      } else {
+        throw new Error(data.error || 'Submission failed');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      errorBanner.classList.remove('hidden');
+      errorBanner.querySelector('p').textContent = 
+        error.message.includes('Rate limit') 
+          ? error.message 
+          : 'Something went wrong. Please try again or email me directly.';
+    } finally {
+      submitBtn.textContent = originalBtnText;
+      submitBtn.disabled = false;
     }
   });
 
